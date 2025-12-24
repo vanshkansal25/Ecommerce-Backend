@@ -23,32 +23,18 @@ export const authMiddleware = async (
     next: NextFunction,
 ): Promise<void> => {
     try {
-        const token = req.cookies["ecommerceToken"];
+        const token = req.cookies["ecommerceaccessToken"];
         if (!token) {
             throw new ApiError(401, "Unauthorized Access");
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-        if (!decoded || typeof decoded === "string") {
-            throw new ApiError(401, "Unauthorized Access");
-        }
+        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!) as any;
+        req.user = {
+            id: decoded.id,
+            email: decoded.email,
+            role: decoded.role
+        };
 
-        const { id, email } = decoded as jwt.JwtPayload;
-        const user = await db.query.users.findFirst({
-            where: (users, { eq }) => eq(users.email, email),
-            columns: {
-                //Only return these fields.
-                id: true,
-                email: true,
-                role: true,
-            },
-        });
-
-        if (!user) {
-            throw new ApiError(401, "Unauthorized Access");
-        }
-
-        req.user = user;
         next();
     } catch (error: any) {
         if (error instanceof jwt.TokenExpiredError) {
@@ -59,4 +45,19 @@ export const authMiddleware = async (
             throw new Error(error.message);
         }
     }
+};
+
+export const authorize = (...allowedRoles: string[]) => {
+    return (req: Request, res: Response, next: NextFunction) => {
+        // req.user was populated by authMiddleware
+        if (!req.user) {
+            return next(new ApiError(401, "Authentication required"));
+        }
+
+        if (!allowedRoles.includes(req.user.role)) {
+            return next(new ApiError(403, `Access Denied: ${req.user.role} role unauthorized`));
+        }
+
+        next(); // Authorization successful
+    };
 };
