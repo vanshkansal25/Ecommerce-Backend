@@ -1,18 +1,18 @@
 import "dotenv/config";
-import express,{Application,Request,Response,NextFunction} from "express";
+import express, { Application, Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
 
 import cors from "cors";
-const app:Application=express();
-const PORT=process.env.PORT || 3000;
+const app: Application = express();
+const PORT = process.env.PORT || 3000;
 
 const corsOptions = {
-    origin:"http://localhost:3000",
-    credentials:true
+    origin: "http://localhost:3000",
+    credentials: true
 }
 app.use(cors(corsOptions));
 app.use(cookieParser());
-app.use(express.json({ limit: '10kb' })); 
+app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 app.get('/api/v1/health', (req: Request, res: Response) => {

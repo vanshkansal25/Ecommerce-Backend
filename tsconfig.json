@@ -1,19 +1,34 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "CommonJS",
-    "rootDir": "./src",
+    "target": "ES2016",
+    "module": "commonjs",
     "outDir": "./dist",
+    // "allowImportingTsExtensions": true,
+    "noEmit": false,
+    "resolveJsonModule": true,
+    "typeRoots": [
+      "./src/types",
+      "./node_modules/@types"
+    ],
+    "moduleResolution": "node",
+    "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": "./",
+    "paths": {
+      "@/": [
+        "./src/"
+      ]
+    }
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "src/types/**/*.d.ts",
+    "drizzle.config.ts"
   ],
   "exclude": [
-    "node_modules",
-    "dist",
-    "drizzle.config.ts"
+    "node_modules"
   ]
 }
