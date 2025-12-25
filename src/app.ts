@@ -3,6 +3,8 @@ import express, { Application, Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
 
 import cors from "cors";
+import authRouter from "./routes/user.routes";
+import categoriesRouter from "./routes/category.routes";
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
 
@@ -18,10 +20,12 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.get('/api/v1/health', (req: Request, res: Response) => {
     res.status(200).json({ status: 'ok', service: 'Ecommerce-Backend', timestamp: new Date().toISOString() });
 });
-
+app.use('/api/v1/auth', authRouter)
+app.use('/api/v1/categories', categoriesRouter)
 interface HttpException extends Error {
     status?: number;
 }
+
 
 app.use((err: HttpException, req: Request, res: Response, next: NextFunction) => {
     const status = err.status || 500;
