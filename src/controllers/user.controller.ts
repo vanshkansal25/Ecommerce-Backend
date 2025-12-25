@@ -78,7 +78,7 @@ export const registerUser = asyncHandler(async (req: Request, res: Response, nex
         return next(new ApiError(500, 'Something went wrong while registering the user'));
     }
     const accesstoken = generateAccessToken({ id: result.id, email: result.email, role: result.role });
-    res.cookie("ecommerceToken", accesstoken, {
+    res.cookie("ecommerceaccessToken", accesstoken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "none",
@@ -115,13 +115,13 @@ export const loginUser = asyncHandler(async (req: Request, res: Response, next: 
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "none",
-        maxAge: process.env.ACCESS_TOKEN_EXPIRY as any,
+        maxAge: 15 * 60 * 1000,
     });
     res.cookie("ecommercerefreshToken", refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "none",
-        maxAge: process.env.REFRESH_TOKEN_EXPIRY as any,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     return res.status(200).json(
         new ApiResponse(200, {
@@ -205,7 +205,7 @@ export const generateRefreshTokenFromAccess = asyncHandler(async (req: Request, 
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "none",
-            maxAge: process.env.REFRESH_TOKEN_EXPIRY as any,
+            maxAge: 7 * 24 * 60 * 60 * 1000,
         })
         return res.status(200).json(
             new ApiResponse(200, {}, "Refresh token generated Successfully")

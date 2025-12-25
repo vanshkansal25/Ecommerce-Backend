@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { changePassword, generateRefreshTokenFromAccess, loginUser, logoutUser, registerUser } from "src/controllers/user.controller";
-import { authMiddleware } from "src/middlewares/auth.middleware";
+import { changePassword, generateRefreshTokenFromAccess, loginUser, logoutUser, registerUser } from "../controllers/user.controller";
+import { authMiddleware } from "../middlewares/auth.middleware";
 
 const authRouter = Router();
 // Public Routes

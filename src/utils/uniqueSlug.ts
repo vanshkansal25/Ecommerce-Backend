@@ -1,6 +1,6 @@
 import slugify from "slugify";
 import { eq, like } from "drizzle-orm";
-import { db } from "src/db/db";
+import { db } from "../db/db";
 
 export async function generateUniqueSlug(name: string, table: any): Promise<string> {
     const baseSlug = slugify(name, { lower: true, strict: true });

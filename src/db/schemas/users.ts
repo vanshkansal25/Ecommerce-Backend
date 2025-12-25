@@ -1,6 +1,6 @@
 
 import { pgTable, text, uuid, timestamp, boolean, pgEnum, index } from "drizzle-orm/pg-core";
-
+import { relations } from 'drizzle-orm';
 export const userRoles = pgEnum('user_roles', [
     'USER',
     'ADMIN',
@@ -36,3 +36,27 @@ export const addresses = pgTable('addresses', {
     createdAt: timestamp('createdAt').notNull().defaultNow(),
     updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 })
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+    address: one(addresses, {
+        fields: [users.id],
+        references: [addresses.userId],
+    }),
+    refreshTokens: many(refreshTokens),
+}));
+
+// 2. Relations for Refresh Tokens
+export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
+    user: one(users, {
+        fields: [refreshTokens.userId],
+        references: [users.id],
+    }),
+}));
+
+// 3. Relations for Addresses
+export const addressesRelations = relations(addresses, ({ one }) => ({
+    user: one(users, {
+        fields: [addresses.userId],
+        references: [users.id],
+    }),
+}));

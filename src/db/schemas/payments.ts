@@ -1,7 +1,8 @@
-import {pgTable, uuid, text, timestamp, decimal, integer, pgEnum, jsonb} from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, decimal, integer, pgEnum, jsonb } from "drizzle-orm/pg-core";
 import { orders } from "./orders";
+import { relations } from "drizzle-orm";
 
-export const paymentStatusEnum = pgEnum('payment_status',[
+export const paymentStatusEnum = pgEnum('payment_status', [
     'pending',
     'completed',
     'failed',
@@ -17,14 +18,14 @@ export const payments = pgTable('payments', {
     status: paymentStatusEnum('status').default('pending').notNull(),
     amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
     currency: text('currency').notNull().default('USD'),
-    provider: text('provider').notNull(), 
+    provider: text('provider').notNull(),
     // Essential for debugging failed webhooks
-    rawResponse: jsonb('raw_response'), 
+    rawResponse: jsonb('raw_response'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-export const idempotency_keysStatus = pgEnum('idempotency_keys_status',[
+export const idempotency_keysStatus = pgEnum('idempotency_keys_status', [
     'started',
     'completed',
 ])
@@ -36,3 +37,17 @@ export const idempotencyKeys = pgTable('idempotency_keys', {
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
+
+
+// 1. Relations for Orders (Update your existing orders relations)
+export const ordersRelations = relations(orders, ({ many }) => ({
+    payments: many(payments),
+}));
+
+// 2. Relations for Payments
+export const paymentsRelations = relations(payments, ({ one }) => ({
+    order: one(orders, {
+        fields: [payments.orderId],
+        references: [orders.id],
+    }),
+}));

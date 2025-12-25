@@ -1,12 +1,12 @@
 import { NextFunction, Request, Response } from "express";
-import { asyncHandler } from "src/utils/asyncHandler";
-import { db } from "src/db/db";
-import { generateUniqueSlug } from "src/utils/uniqueSlug";
-import { categories } from "src/db/schemas";
+import { asyncHandler } from "../utils/asyncHandler";
+import { db } from "../db/db";
+import { generateUniqueSlug } from "../utils/uniqueSlug";
+import { categories } from "../db/schemas";
 import { eq, sql } from "drizzle-orm";
-import { ApiResponse } from "src/utils/apiResponse";
-import { buildTree } from "src/utils/tree";
-import { ApiError } from "src/utils/apiError";
+import { ApiResponse } from "../utils/apiResponse";
+import { buildTree } from "../utils/tree";
+import { ApiError } from "../utils/apiError";
 
 
 // export const checkCircular = async (parent:any,parentId:any)=>{
