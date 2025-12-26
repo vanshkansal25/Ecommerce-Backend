@@ -172,15 +172,15 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response, ne
     return res.status(201).json(new ApiResponse(201, result, "Product updated successfully"))
 })
 export const deleteProduct = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const { id } = req.params;
+    const { productId } = req.params;
 
-    if (!id) throw new ApiError(400, "Product ID is required");
+    if (!productId) throw new ApiError(400, "Product ID is required");
 
     const result = await db.transaction(async (tx) => {
         const [existingProduct] = await tx
             .select()
             .from(products)
-            .where(eq(products.id, id))
+            .where(eq(products.id, productId))
             .limit(1);
 
         if (!existingProduct) {
@@ -194,12 +194,12 @@ export const deleteProduct = asyncHandler(async (req: Request, res: Response, ne
                 isActive: false,
                 updatedAt: new Date()
             })
-            .where(eq(products.id, id))
+            .where(eq(products.id, productId))
             .returning();
         await tx
             .update(product_variants)
             .set({ updatedAt: new Date() })
-            .where(eq(product_variants.productId, id));
+            .where(eq(product_variants.productId, productId));
 
         return deletedProduct;
     });
