@@ -24,7 +24,6 @@ interface ProductInput {
 }
 
 interface UpdateProductBody {
-    productId: string;
     name?: string;
     description?: string;
     isActive: boolean,
@@ -88,12 +87,13 @@ export const createProduct = asyncHandler(async (req: Request, res: Response, ne
     return res.status(201).json(new ApiResponse(201, result, "Product created successfully"));
 })
 export const updateProduct = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const { productId } = req.params;
     const data: UpdateProductBody = req.body;
-    if (!data.productId) {
+    if (!productId) {
         throw new ApiError(400, "Product ID is required");
     }
     const result = await db.transaction(async (tx) => {
-        const [existingProuct] = await tx.select().from(products).where(eq(products.id, data.productId));
+        const [existingProuct] = await tx.select().from(products).where(eq(products.id, productId));
         if (!existingProuct) {
             throw new ApiError(404, "Product not found");
         }
@@ -103,9 +103,9 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response, ne
             ...(data.categoryId && { categoryId: data.categoryId }),
             ...(typeof data.isActive === "boolean" && { isActive: data.isActive }),
             updatedAt: new Date()
-        }).where(eq(products.id, data.productId));
+        }).where(eq(products.id, productId));
 
-        const existingVariants = await tx.select().from(product_variants).where(eq(product_variants.productId, data.productId));
+        const existingVariants = await tx.select().from(product_variants).where(eq(product_variants.productId, productId));
         const existingVariantsId = existingVariants.map(v => v.id);
         if (!data.variants) {
             throw new ApiError(400, "Variants are required");
@@ -153,7 +153,7 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response, ne
             //Insert new variant + inventory
             else {
                 const [newVariant] = await tx.insert(product_variants).values({
-                    productId: data.productId,
+                    productId: productId,
                     sku: v.sku,
                     price,
                     attributes
