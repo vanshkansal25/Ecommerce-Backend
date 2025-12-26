@@ -10,7 +10,7 @@ import { eq, inArray } from "drizzle-orm";
 
 interface VariantInput {
     sku: string;
-    attributes: Record<string, any>;
+    attributes: any;
     price: number | string;
     initialStock?: number;
     lowStockThreshold?: number;
@@ -31,7 +31,7 @@ interface UpdateProductBody {
     variants?: {
         id?: string;              // If present → update existing
         sku: string;
-        attributes: Record<string, any>;
+        attributes: any;
         price: number | string;
         initialStock?: number;
         lowStockThreshold?: number
@@ -66,7 +66,7 @@ export const createProduct = asyncHandler(async (req: Request, res: Response, ne
             const [variant] = await tx.insert(product_variants).values({
                 productId: product.id,
                 sku: v.sku,
-                attributes: JSON.stringify(v.attributes),
+                attributes: v.attributes,
                 price: v.price.toString(),
             }).returning({ id: product_variants.id });
             await tx.insert(product_inventory).values({
@@ -136,7 +136,7 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response, ne
 
         for (const v of data.variants) {
             const price = v.price.toString();
-            const attributes = JSON.stringify(v.attributes);
+            const attributes = v.attributes;
 
             //Update existing variant
             if (v.id) {

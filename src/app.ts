@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import authRouter from "./routes/user.routes";
 import categoriesRouter from "./routes/category.routes";
+import productRouter from './routes/product.routes'
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
 
@@ -22,6 +23,7 @@ app.get('/api/v1/health', (req: Request, res: Response) => {
 });
 app.use('/api/v1/auth', authRouter)
 app.use('/api/v1/categories', categoriesRouter)
+app.use('/api/v1/products', productRouter)
 interface HttpException extends Error {
     status?: number;
 }

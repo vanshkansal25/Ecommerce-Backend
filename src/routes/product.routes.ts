@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { createProduct, deleteProduct, updateProduct } from "../controllers/product.controller";
+import { authMiddleware, authorize } from "../middlewares/auth.middleware";
 
-const router = Router();
+const productRouter = Router();
 
-router.post("/", createProduct);
-router.put("/:id", updateProduct);
-router.delete("/:id", deleteProduct);
+productRouter.post("/create-product", authMiddleware, authorize('ADMIN'), createProduct);
+productRouter.put("/update-product/:productId", authMiddleware, authorize('ADMIN'), updateProduct);
+productRouter.delete("/delete-product/:productId", authMiddleware, authorize('ADMIN'), deleteProduct);
 
-export default router;
+export default productRouter;

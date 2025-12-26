@@ -1,4 +1,4 @@
-import { boolean, decimal, integer, pgTable, text, timestamp, uuid, index, check } from "drizzle-orm/pg-core";
+import { boolean, decimal, integer, pgTable, text, timestamp, uuid, index, check, jsonb } from "drizzle-orm/pg-core";
 import { categories } from "./categories";
 import { sql } from "drizzle-orm";
 import { relations } from 'drizzle-orm';
@@ -21,7 +21,7 @@ export const product_variants = pgTable('product_variants', {
     productId: uuid('product_id').references(() => products.id, { onDelete: 'cascade' }).notNull(),
     sku: text('sku').notNull().unique(),
     // Using JSONB for attributes to allow {"size": "XL", "color": "Blue"}
-    attributes: text('attributes').notNull(),
+    attributes: jsonb('attributes').notNull(),
     price: decimal('price', { precision: 12, scale: 2 }).notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
