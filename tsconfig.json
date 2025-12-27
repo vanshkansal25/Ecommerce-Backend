@@ -6,10 +6,6 @@
     // "allowImportingTsExtensions": true,
     "noEmit": false,
     "resolveJsonModule": true,
-    "typeRoots": [
-      "./src/types",
-      "./node_modules/@types"
-    ],
     "moduleResolution": "node",
     "rootDir": "./",
     "strict": true,

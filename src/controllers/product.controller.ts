@@ -5,7 +5,9 @@ import { generateUniqueSlug } from "../utils/uniqueSlug";
 import { product_inventory, product_variants, products } from "../db/schemas";
 import { db } from "../db/db";
 import { ApiResponse } from "../utils/apiResponse";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, gte, ilike, inArray, lte, min, sql } from "drizzle-orm";
+import { redis, cacheData, getCachedData, invalidateProductCache } from "../utils/redis";
+import { getDescendantCategoryIds } from "../utils/categoryHelper";
 
 
 interface VariantInput {
@@ -84,6 +86,7 @@ export const createProduct = asyncHandler(async (req: Request, res: Response, ne
             variants: variantResults,
         };
     })
+    await invalidateProductCache();
     return res.status(201).json(new ApiResponse(201, result, "Product created successfully"));
 })
 export const updateProduct = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
@@ -208,3 +211,53 @@ export const deleteProduct = asyncHandler(async (req: Request, res: Response, ne
         new ApiResponse(200, { id: result.id }, "Product successfully deactivated (Soft Delete)")
     );
 });
+
+
+export const getProducts = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const { category, search, minPrice, maxPrice, page = 1, limit = 12 } = req.query;
+    const p = Math.max(1, Number(page));
+    const l = Math.max(1, Number(limit));
+    const offset = (p - 1) * l
+    const cacheKey = `products:list:${category || 'all'}:${search || 'none'}:${minPrice || 0}:${maxPrice || 'inf'}:${p}`;
+    const cachedData = await getCachedData(cacheKey);
+    if (cachedData) {
+        return res.status(200).json(new ApiResponse(200, cachedData, "Products fetched successfully"));
+    }
+    let categoryIds: string[] = [];
+    if (category) {
+        categoryIds = await getDescendantCategoryIds(category as string);
+    }
+    const filters = [eq(products.isActive, true)];
+    if (category) {
+        categoryIds = await getDescendantCategoryIds(category as string);
+        if (categoryIds.length > 0) {
+            filters.push(sql`${products.categoryId} IN ${categoryIds}`);
+        }
+    }
+    if (search) {
+        filters.push(ilike(products.name, `%${search}%`));
+    }
+    if (minPrice) {
+        filters.push(gte(product_variants.price, String(minPrice)));
+    }
+
+    if (maxPrice) {
+        filters.push(lte(product_variants.price, String(maxPrice)));
+    }
+
+    const result = await db.select({
+        id: products.id,
+        name: products.name,
+        slug: products.slug,
+        description: products.description,
+        startingPrice: min(product_variants.price)
+    }).from(products)
+        .leftJoin(product_variants, eq(products.id, product_variants.productId))
+        .where(and(...filters))
+        .groupBy(products.id)
+        .limit(l)
+        .offset(offset);
+
+    await cacheData(cacheKey, result, 3600);
+    return res.status(200).json(new ApiResponse(200, result, "Products fetched successfully"));
+})
