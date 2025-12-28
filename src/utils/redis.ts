@@ -19,9 +19,16 @@ export const getCachedData = async <T>(key: string): Promise<T | null> => {
 };
 
 export const invalidateProductCache = async () => {
+    // for the list of products
     const keys = await redis.keys('products:list:*');
     if (keys.length > 0) {
         await redis.del(...keys);
+        console.log('Product Cache Cleared');
+    }
+    // for single product wich we obtain using slug
+    const key = await redis.keys('product:slug*');
+    if (key.length > 0) {
+        await redis.del(...key);
         console.log('Product Cache Cleared');
     }
 };

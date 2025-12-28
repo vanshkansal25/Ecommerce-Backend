@@ -224,9 +224,6 @@ export const getProducts = asyncHandler(async (req: Request, res: Response, next
         return res.status(200).json(new ApiResponse(200, cachedData, "Products fetched successfully"));
     }
     let categoryIds: string[] = [];
-    if (category) {
-        categoryIds = await getDescendantCategoryIds(category as string);
-    }
     const filters = [eq(products.isActive, true)];
     if (category) {
         categoryIds = await getDescendantCategoryIds(category as string);
@@ -260,4 +257,30 @@ export const getProducts = asyncHandler(async (req: Request, res: Response, next
 
     await cacheData(cacheKey, result, 3600);
     return res.status(200).json(new ApiResponse(200, result, "Products fetched successfully"));
+})
+
+export const getProductBySlug = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const { slug } = req.params;
+    if (!slug) throw new ApiError(400, "Slug is required");
+    const cacheKey = `product:slug:${slug}`;
+    const cachedData = await getCachedData(cacheKey);
+    if (cachedData) {
+        return res.status(200).json(new ApiResponse(200, cachedData, "Product fetched successfully"));
+    }
+    const product = await db.query.products.findFirst({
+        where: and(eq(products.slug, slug), eq(products.isActive, true)),
+        with: {
+            category: true,
+            variants: {
+                with: {
+                    inventory: true
+                }
+            }
+        }
+    })
+    if (!product) {
+        throw new ApiError(404, "Product not found");
+    }
+    await cacheData(cacheKey, product, 3600);
+    return res.status(200).json(new ApiResponse(200, product, "Product fetched successfully"));
 })
