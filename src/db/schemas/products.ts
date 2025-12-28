@@ -21,7 +21,7 @@ export const product_variants = pgTable('product_variants', {
     productId: uuid('product_id').references(() => products.id, { onDelete: 'cascade' }).notNull(),
     sku: text('sku').notNull().unique(),
     // Using JSONB for attributes to allow {"size": "XL", "color": "Blue"}
-    attributes: jsonb('attributes').notNull(),
+    attributes: jsonb("attributes").notNull().default("{}"),
     price: decimal('price', { precision: 12, scale: 2 }).notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),

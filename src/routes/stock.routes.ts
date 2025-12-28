@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { addStock, getStockLevel, syncReservedStock, updateStock } from "../controllers/stock.controller";
-import { authMiddleware, authorize } from "src/middlewares/auth.middleware";
+import { authMiddleware, authorize } from "../middlewares/auth.middleware";
 
 
 
