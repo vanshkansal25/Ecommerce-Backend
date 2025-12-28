@@ -1,4 +1,5 @@
 import { integer, pgTable, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { users } from "./users";
 import { product_variants } from "./products";
 
@@ -20,4 +21,23 @@ export const cart_items = pgTable('cart_items', {
     // Ensures a user doesn't have two rows for the same SKU
     // Instead, just increment the quantity of the existing row
     uniqueItemInCart: unique().on(table.cartId, table.variantId),
+}));
+
+export const cartsRelations = relations(carts, ({ one, many }) => ({
+    user: one(users, {
+        fields: [carts.userId],
+        references: [users.id],
+    }),
+    items: many(cart_items),
+}));
+
+export const cartItemsRelations = relations(cart_items, ({ one }) => ({
+    cart: one(carts, {
+        fields: [cart_items.cartId],
+        references: [carts.id],
+    }),
+    variant: one(product_variants, {
+        fields: [cart_items.variantId],
+        references: [product_variants.id],
+    }),
 }));

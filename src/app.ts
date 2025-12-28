@@ -7,6 +7,7 @@ import authRouter from "./routes/user.routes";
 import categoriesRouter from "./routes/category.routes";
 import productRouter from './routes/product.routes'
 import stockRouter from "./routes/stock.routes";
+import cartRouter from "./routes/cart.routes";
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
 
@@ -26,7 +27,7 @@ app.use('/api/v1/auth', authRouter)
 app.use('/api/v1/categories', categoriesRouter)
 app.use('/api/v1/products', productRouter)
 app.use('/api/v1/stocks', stockRouter)
-
+app.use('/api/v1/carts', cartRouter)
 
 interface HttpException extends Error {
     status?: number;
