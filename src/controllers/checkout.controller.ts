@@ -160,3 +160,41 @@ export const createPaymentIntent = asyncHandler(async (req: Request, res: Respon
         )
     );
 })
+
+export const confirmOrderPayment = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const { orderId, paymentIntentId } = req.body;
+
+    // paymentIntentId is what we sent as clientSecret from createPaymentIntent
+    const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    if (intent.status !== 'succeeded') {
+        throw new ApiError(400, "Payment has not been finalized yet.");
+    }
+    // Transaction to make changes in db if payment succeed
+    await db.transaction(async (tx) => {
+        const order = await tx.query.orders.findFirst({
+            where: and(eq(orders.id, orderId))
+        })
+        // check whether is order paid or not
+        if (!order || order.status === 'paid') return;
+        await tx.update(orders)
+            .set({ status: 'paid', paidAt: new Date() })
+            .where(eq(orders.id, orderId));
+        const items = await tx.query.order_items.findMany({
+            where: eq(order_items.orderId, orderId)
+        });
+        // substract reserved quantity from product inventory
+        for (const item of items) {
+            await tx.update(product_inventory)
+                .set({
+                    reservedQuantity: sql`${product_inventory.reservedQuantity} - ${item.quantity}`
+                })
+                .where(eq(product_inventory.variantId, item.variantId));
+        }
+        if (order.expirationJobId) {
+            const job = await inventoryQueue.getJob(order.expirationJobId);
+            if (job) await job.remove();
+        }
+    })
+    return res.status(200).json(new ApiResponse(200, {}, "Payment confirmed and order placed!"));
+
+}) 

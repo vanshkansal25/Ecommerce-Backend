@@ -5,7 +5,7 @@ import { cart_items, carts } from "../db/schemas";
 import { and, eq, sql } from "drizzle-orm";
 import { ApiResponse } from "../utils/apiResponse";
 import { redis } from "../utils/redis";
-import { ApiError } from "src/utils/apiError";
+import { ApiError } from "../utils/apiError";
 // add cart
 export const addCart = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const { variantId, quantity } = req.body;
