@@ -7,6 +7,7 @@ import { carts, idempotencyKeys, order_items, orders, product_inventory } from "
 import { and, eq, gte, sql } from "drizzle-orm";
 import { redis } from "../utils/redis";
 import { inventoryQueue } from "../Queues/inventory.queue";
+import Stripe from "stripe";
 
 
 
@@ -86,11 +87,14 @@ export const intialCheckOut = asyncHandler(async (req: Request, res: Response, n
         );
         // clear the cart 
         await tx.delete(carts).where(eq(carts.userId, userId));
-        await inventoryQueue.add(
+        const job = await inventoryQueue.add(
             "expire-order",
             { orderId: newOrder.id, userId },
             { delay: 15 * 60 * 1000 }
         );
+        await tx.update(orders)
+            .set({ expirationJobId: job.id })
+            .where(eq(orders.id, newOrder.id));
         const responseData = new ApiResponse(201, { orderId: newOrder.id }, "Order initiated");
         await tx.update(idempotencyKeys)
             .set({ status: 'completed', handlerOutput: responseData })
@@ -104,4 +108,55 @@ export const intialCheckOut = asyncHandler(async (req: Request, res: Response, n
     })
     return res.status(201).json(new ApiResponse(201, finalOrder, "Order initiated"));
 
+})
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2025-12-15.clover',
+    typescript: true,
+})
+
+export const createPaymentIntent = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const { orderId } = req.body;
+    const userId = req.user?.id;
+    if (!orderId || !userId) {
+        throw new ApiError(400, "Invalid Input Data")
+    }
+    // fetch order and check the ownership
+    const order = await db.query.orders.findFirst({
+        where: and(eq(orders.id, orderId), eq(orders.userId, userId))
+    })
+    if (!order) throw new ApiError(404, "Order not found");
+    if (order.status !== "created" && order.status !== "payment_pending") {
+        throw new ApiError(400, "Order is not in a payable state");
+    }
+    //Stripe expects amounts in CENTS (Integer)
+    //$10.00 becomes 1000. Our decimal is "10.00" string.
+    const amountInCents = Math.round(parseFloat(order.totalAmount) * 100);
+    const paymentIntent = await stripe.paymentIntents.create({
+        amount: amountInCents,
+        currency: "usd",
+        metadata: {
+            orderId: order.id,
+            userId: userId,
+        },// so to check when stripe webook hit back , we can get which order is paid
+        automatic_payment_methods: { enabled: true },
+    }, {
+        // this thing will handle the duplicate payments
+        idempotencyKey: `payment_intent_${order.id}`
+    })
+
+    // update order status to payement_pending
+    await db.update(orders).set({
+        status: "payment_pending",
+        paymentReference: paymentIntent.id,
+    }).where(eq(orders.id, orderId))
+
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            { clientSecret: paymentIntent.client_secret },//clientSecret is used because it is the secure way for the frontend to complete a payment
+            "Payment intent created"
+        )
+    );
 })

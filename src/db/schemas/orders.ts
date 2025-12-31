@@ -32,6 +32,7 @@ export const orders = pgTable('orders', {
         phone: string
     }>().notNull(),
     paymentReference: text('payment_reference').unique(), // External ID from Stripe/Razorpay
+    expirationJobId: text('expiration_job_id'),// for expiring the job from bullmQ in case payment is succeeded
 
     // Audit Timestamps
     paidAt: timestamp('paid_at'),
