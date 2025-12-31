@@ -15,6 +15,7 @@ Designed to handle **high-concurrency events** such as flash sales, limited prod
 | Caching         | Redis (Cache-Aside Pattern) |
 | Async Jobs      | BullMQ  |
 | Security        | JWT, Bcrypt, Role-Based Access Control (RBAC) |
+| Payments        | **Stripe API (Synchronous Verification Flow)** |
 
 ---
 
@@ -56,6 +57,18 @@ Designed to handle **high-concurrency events** such as flash sales, limited prod
 -  **Redis Caching**: Sub-10ms response times for product details.
 
 ---
+### **6. Distributed Order Lifecycle (BullMQ)**
+- **Automatic Stock Recovery**: A "Reaper" worker reclaims reserved stock if payment fails or no confirmation within **15 minutes**.
+- **Job Cleanup**: Payment success triggers job deletion to avoid overhead.
+- **Resilience**: Workers persist via Redis and survive server restarts.
+
+---
+
+### **7. Bulletproof Payment & Idempotency**
+- **Idempotency Layer**: Prevents duplicate order creation or double-charging (custom `idempotency_keys` table).
+- **State Machine**: Order transitions → `created → payment_pending → paid / cancelled`.
+- **Secure Payment Verification**: Order is finalized **only** after server-side Stripe confirmation (`payment_intent.succeeded`).
+---
 
 ## API Endpoints (Quick Look)
 
@@ -81,7 +94,9 @@ Designed to handle **high-concurrency events** such as flash sales, limited prod
 | | GET | `/api/v1/stock/get-stock-level/:variantId` | Real-time stock level | Public/Private* |
 | **Cart** | POST | `/api/v1/cart/add-cart` | Add/increment item in cart (cache invalidated) | Private |
 | | GET | `/api/v1/cart/get-cart` | Get full cart (Redis optimized) | Private |
-
+| **Checkout** | POST | **`/api/v1/checkout/`** | Initial checkout (reserve stock, create order, start BullMQ timer) | Private |
+| **Checkout** | POST | **`/api/v1/checkout/create-payment-intent`** | Stripe handshake, generates client secret | Private |
+| **Checkout** | POST | **`/api/v1/checkout/confirm-payment`** | Final settlement, Stripe server-verified | Private |
 
 ## Performance Benchmarks (Local)
 
@@ -90,15 +105,17 @@ Designed to handle **high-concurrency events** such as flash sales, limited prod
 | Search | ~45ms (Postgres Indexing) |
 | Cart Read | <5ms (Redis Cache Hit) |
 | Product Details | ~10ms (Redis Cache Hit) |
+| Create Order + Reserve Stock | <30ms (Transaction Optimized) |
 
 ---
 
 ##  Engineering Principles Applied
 -  **Race Condition Prevention**: All inventory math happens in DB, no "check then update" in JS.
 -  **Type Safety**: End-to-end TypeScript interfaces from schema.
--  **N+1 Query Avoidance**: Optimized relational queries for deep data structures.
 -  **Performance First**: Redis caching, atomic writes, optimized queries.
-
+- **Atomic State Transitions**: Order & payment updates are transaction-bound.
+- **Distributed Task Management**: BullMQ worker queue for order expiry.
+- **Payment Security**: Zero trust — frontend confirmation not accepted without Stripe server validation.
 ---
 
 ## Vision
