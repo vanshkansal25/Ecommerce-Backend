@@ -9,6 +9,8 @@ import productRouter from './routes/product.routes'
 import stockRouter from "./routes/stock.routes";
 import cartRouter from "./routes/cart.routes";
 import checkOutRouter from './routes/checkout.routes'
+import salesRouter from "./routes/sales.routes";
+import orderRouter from "./routes/order.routes";
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
 
@@ -30,6 +32,8 @@ app.use('/api/v1/products', productRouter)
 app.use('/api/v1/stocks', stockRouter)
 app.use('/api/v1/carts', cartRouter)
 app.use('/api/v1/checkout', checkOutRouter)
+app.use('/api/v1', orderRouter)
+app.use('/api/v1', salesRouter)
 
 interface HttpException extends Error {
     status?: number;

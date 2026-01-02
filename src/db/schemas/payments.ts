@@ -40,7 +40,7 @@ export const idempotencyKeys = pgTable('idempotency_keys', {
 
 
 // 1. Relations for Orders (Update your existing orders relations)
-export const ordersRelations = relations(orders, ({ many }) => ({
+export const orderRelations = relations(orders, ({ many }) => ({
     payments: many(payments),
 }));
 
