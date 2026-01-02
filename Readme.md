@@ -69,6 +69,15 @@ Designed to handle **high-concurrency events** such as flash sales, limited prod
 - **State Machine**: Order transitions → `created → payment_pending → paid / cancelled`.
 - **Secure Payment Verification**: Order is finalized **only** after server-side Stripe confirmation (`payment_intent.succeeded`).
 ---
+### **8. API Protection & Rate Limiting**
+- **Rate Limiting Middleware** applied at the API gateway level.
+- Protects against brute-force attacks, abuse, and traffic spikes.
+- Different rate limits for:
+  - Public routes (product browsing)
+  - Auth routes (login/register)
+  - Sensitive routes (checkout, payment confirmation)
+- Helps maintain system stability during flash sales and peak traffic.
+---
 
 ## API Endpoints (Quick Look)
 
@@ -97,6 +106,10 @@ Designed to handle **high-concurrency events** such as flash sales, limited prod
 | **Checkout** | POST | **`/api/v1/checkout/`** | Initial checkout (reserve stock, create order, start BullMQ timer) | Private |
 | **Checkout** | POST | **`/api/v1/checkout/create-payment-intent`** | Stripe handshake, generates client secret | Private |
 | **Checkout** | POST | **`/api/v1/checkout/confirm-payment`** | Final settlement, Stripe server-verified | Private |
+| **Orders** | GET | `/api/v1/orders/my-orders` | Get all orders for logged-in user | Private |
+| | GET | `/api/v1/orders/my-orders/:orderId` | Get single order details | Private |
+| **Sales / Analytics** | GET | `/api/v1/sales/*` | Sales analytics & metrics dashboard | Private (Admin) |
+
 
 ## Performance Benchmarks (Local)
 
@@ -116,6 +129,7 @@ Designed to handle **high-concurrency events** such as flash sales, limited prod
 - **Atomic State Transitions**: Order & payment updates are transaction-bound.
 - **Distributed Task Management**: BullMQ worker queue for order expiry.
 - **Payment Security**: Zero trust — frontend confirmation not accepted without Stripe server validation.
+- **API Hardening**: Rate limiting, auth guards, and role checks at route level.
 ---
 
 ## Vision
@@ -126,4 +140,3 @@ To build a **production-ready, high-concurrency e-commerce backend** that demons
 - Advanced caching and query optimization
 - Type-safe, maintainable, and modern backend design
 
----
