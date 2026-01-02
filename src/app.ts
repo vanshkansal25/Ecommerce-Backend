@@ -11,6 +11,7 @@ import cartRouter from "./routes/cart.routes";
 import checkOutRouter from './routes/checkout.routes'
 import salesRouter from "./routes/sales.routes";
 import orderRouter from "./routes/order.routes";
+import { generalLimiter } from "./middlewares/rate-limiter.middleware";
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
 
@@ -26,6 +27,7 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.get('/api/v1/health', (req: Request, res: Response) => {
     res.status(200).json({ status: 'ok', service: 'Ecommerce-Backend', timestamp: new Date().toISOString() });
 });
+app.use('/api/', generalLimiter)
 app.use('/api/v1/auth', authRouter)
 app.use('/api/v1/categories', categoriesRouter)
 app.use('/api/v1/products', productRouter)
