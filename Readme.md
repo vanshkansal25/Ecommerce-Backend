@@ -19,7 +19,7 @@ Designed to handle **high-concurrency events** such as flash sales, limited prod
 
 ---
 
-## Core Architecture & Key Features(Applied Till Now)
+## Core Architecture & Key Features
 
 ### **1. Identity & Access Management (IAM)**
 -  **JWT Authentication** with secure cookie storage.
